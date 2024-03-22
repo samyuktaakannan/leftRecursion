@@ -1,0 +1,76 @@
+def remove_left_recursion(grammar):
+    non_terminals = list(grammar.keys())
+    updated_grammar = {}
+
+    for A in non_terminals:
+        productions = grammar[A]
+        updated_productions = []
+        new_A = A + "'"
+        alpha_productions = []
+        beta_productions = []
+
+        for production in productions:
+            if production[0] == A:
+                alpha_productions.append(production[1:])
+            else:
+                beta_productions.append(production)
+
+        if len(alpha_productions) > 0:
+            updated_productions.extend([production + new_A for production in beta_productions])
+            updated_productions.extend([production + new_A for production in alpha_productions])
+            updated_productions.append('$')
+
+            updated_grammar[A] = [production for production in updated_productions if production != '$']
+            updated_grammar[new_A] = [production for production in beta_productions] + ['$']
+        else:
+            updated_grammar[A] = productions
+
+    return updated_grammar
+
+
+def eliminate_indirect_recursion(grammar):
+    non_terminals = list(grammar.keys())
+    updated_grammar = grammar.copy()
+
+    for i in range(len(non_terminals)):
+        A = non_terminals[i]
+
+        for j in range(i):
+            B = non_terminals[j]
+            productions_A = updated_grammar[A]
+            productions_B = updated_grammar[B]
+
+            new_productions = []
+
+            for production_A in productions_A:
+                if production_A[0] == B:
+                    for production_B in productions_B:
+                        new_productions.append(production_B + production_A[1:])
+                else:
+                    new_productions.append(production_A)
+
+            updated_grammar[A] = new_productions
+
+    return updated_grammar
+
+
+def main():
+    grammar = {
+        'S': ['a', '^', '(T)'],
+        'T': ['T,S', 'S']
+    }
+
+    print("Original Grammar:")
+    for non_terminal, productions in grammar.items():
+        print(non_terminal, '->', '|'.join(productions))
+
+    grammar = remove_left_recursion(grammar)
+    grammar = eliminate_indirect_recursion(grammar)
+
+    print("\nGrammar after removing left recursion:")
+    for non_terminal, productions in grammar.items():
+        print(non_terminal, '->', '|'.join(productions))
+
+
+if __name__ == "__main__":
+    main()
